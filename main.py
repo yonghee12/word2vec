@@ -1,15 +1,10 @@
-from typing import *
 from itertools import chain
 
-import numpy as np
-import pandas as pd
 import torch
-from torch.autograd import Variable
 import torch.nn.functional as F
-
 from nltk import word_tokenize
-from nltk.corpus import stopwords
 from nltk.stem import WordNetLemmatizer
+from torch.autograd import Variable
 
 from functions import *
 
@@ -61,7 +56,7 @@ class BagOfWords:
         self.pairs_flat = list(chain.from_iterable(self.pairs_matrix))
 
 
-class Word2Vec:
+class TrainWord2Vec:
     def __init__(self):
         pass
 
@@ -80,20 +75,22 @@ class Word2Vec:
 
     def train(self, emb_dimension=30, epochs=10, lr=0.001, continue_last=False):
         if not continue_last:
-            self.W_c = Variable(torch.randn(emb_dimension, self.vocab_size), requires_grad=True).float()
-            self.W_o = Variable(torch.randn(self.vocab_size, emb_dimension), requires_grad=True).float()
+            self.W_c = Variable(torch.nn.init.xavier_normal(torch.empty(emb_dimension, self.vocab_size)),
+                                requires_grad=True).float()
+            self.W_o = Variable(torch.nn.init.xavier_normal(torch.empty(self.vocab_size, emb_dimension)),
+                                requires_grad=True).float()
 
         for epoch in range(epochs):
             loss_val = 0
             for center_i, context_i in self.bow.pairs_flat:
-                x = Variable(self.get_input_layer(center_i)).float()
+                layer_input = Variable(self.get_input_layer(center_i)).float()
                 y_true = Variable(torch.from_numpy(np.array([context_i])).long())
 
-                z1 = torch.matmul(self.W_c, x)
-                z2 = torch.matmul(self.W_o, z1)
+                layer_fc1 = torch.matmul(self.W_c, layer_input)
+                layer_fc2 = torch.matmul(self.W_o, layer_fc1)
+                layer_output = F.log_softmax(layer_fc2, dim=0)
 
-                log_softmax = F.log_softmax(z2, dim=0)
-                loss = F.nll_loss(log_softmax.view(1, self.vocab_size), y_true)
+                loss = F.nll_loss(layer_output.view(1, self.vocab_size), y_true)
                 loss_val += loss.item()
                 loss.backward()
 
@@ -106,13 +103,15 @@ class Word2Vec:
                 print(f"Loss at this epoch {epoch}: {loss_val / self.train_size}")
 
 
-w2v = Word2Vec()
-w2v.prepare_corpus(corpus)
-w2v.train(emb_dimension=10, epochs=1000, continue_last=False, lr=0.01)
-wo_arr = np.array(w2v.W_o.data.view(-1, 10).data)
-wo_df = pd.DataFrame(wo_arr, index=w2v.bow.unique_tokens)
-wc_arr = np.array(w2v.W_c.data.T.data)
-wc_df = pd.DataFrame(wc_arr, index=w2v.bow.unique_tokens)
+wv_trainer = TrainWord2Vec()
+wv_trainer.prepare_corpus(corpus)
+emb_dim = 5
+wv_trainer.train(emb_dimension=emb_dim, epochs=1000, continue_last=False, lr=0.01)
+wo_arr = np.array(wv_trainer.W_o.data.view(-1, emb_dim).data)
+wo_df = pd.DataFrame(wo_arr, index=wv_trainer.bow.unique_tokens)
+wc_arr = np.array(wv_trainer.W_c.data.T.data)
+wc_df = pd.DataFrame(wc_arr, index=wv_trainer.bow.unique_tokens)
+
 
 def get_cos_sim_score(wv, k1, k2):
     return round(cos_sim(wv.loc[k1, :], wv.loc[k2, :]), 3)
@@ -124,7 +123,18 @@ def cos_sim(a, b):
 
 get_cos_sim_score(wc_df, 'king', 'queen')
 
-for perp in range(10):
-    tsne_plot(w2v.bow.unique_tokens, wc_arr, filename=f'wc_word_vector.jpg', perplexity=perp)
+for perp in range(1, 5):
+    tsne_plot(wv_trainer.bow.unique_tokens, wc_arr, filename=f'wc_word_vector.jpg', perplexity=perp)
 
 print()
+
+"""
+인사이트
+    - 지금으로선 wo보다 wc가 의미를 더 잘 파악하는 것 같다. 이유는 잘 모르겠다.
+    - 적은 텍스트로도 의미를 어느정도 뽑아낸다.
+    - normal보다 xavier가 조금 더 나은 것 같지만 절대적인지는 모르겠다. 어짜피 활성화함수가 없어서
+    - optimizer는 시도를 해봐야겠다
+    - 이렇게 무식하게 다 도는 방법 말고 없나?
+        - skipgram 이니 한번에 context words 많이 아므로 그것 이용하는 방
+TODO: optimizer, 한국어 토크나이징, most_similar 구현, plotting 자동화(perp 찾기), 좋은 dim 찾 
+"""
