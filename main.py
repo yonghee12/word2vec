@@ -106,7 +106,8 @@ class TrainWord2Vec:
 wv_trainer = TrainWord2Vec()
 wv_trainer.prepare_corpus(corpus)
 emb_dim = 5
-wv_trainer.train(emb_dimension=emb_dim, epochs=1000, continue_last=False, lr=0.01)
+# wv_trainer.train(emb_dimension=emb_dim, epochs=1000, continue_last=False, lr=0.01)
+wv_trainer.train(emb_dimension=emb_dim, epochs=1000, continue_last=True, lr=0.005)
 wo_arr = np.array(wv_trainer.W_o.data.view(-1, emb_dim).data)
 wo_df = pd.DataFrame(wo_arr, index=wv_trainer.bow.unique_tokens)
 wc_arr = np.array(wv_trainer.W_c.data.T.data)
@@ -121,10 +122,10 @@ def cos_sim(a, b):
     return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
 
 
-get_cos_sim_score(wc_df, 'king', 'queen')
+get_cos_sim_score(wc_df, 'king', 'she')
 
 for perp in range(1, 5):
-    tsne_plot(wv_trainer.bow.unique_tokens, wc_arr, filename=f'wc_word_vector.jpg', perplexity=perp)
+    tsne_plot(wv_trainer.bow.unique_tokens, wc_arr, filename=f'remote_wc_word_vector.jpg', perplexity=4)
 
 print()
 
