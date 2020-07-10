@@ -1,3 +1,4 @@
+from typing import *
 from itertools import chain
 
 import torch
@@ -116,7 +117,6 @@ wc_df = pd.DataFrame(wc_arr, index=wv_trainer.bow.unique_tokens)
 
 def get_cos_sim_score(wv, k1, k2):
     return round(cos_sim(wv.loc[k1, :], wv.loc[k2, :]), 3)
-
 
 def cos_sim(a, b):
     return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
