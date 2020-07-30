@@ -31,7 +31,7 @@ class BagOfWords:
         self.kor_tokenizer = KoreanTokenizer('mecab')
 
         if list_of_texts:
-            self.make_bow(list_of_texts)
+            self.make_token_indices(list_of_texts)
 
     def make_tokenized_matrix_english(self, texts: List[str], lemmatize=True):
         if lemmatize:
@@ -46,7 +46,7 @@ class BagOfWords:
         self.tokenized_matrix = [[t[0] for t in corp['tokens'] if t[1] in self.kor_tokenizer.include_poses] for corp in
                                  token_matrix]
 
-    def make_bow(self):
+    def make_token_indices(self):
         assert self.tokenized_matrix
         self.unique_tokens = get_uniques_from_nested_lists(self.tokenized_matrix)
         self.token2idx, self.idx2token = get_item2idx(self.unique_tokens, unique=True)
@@ -76,14 +76,14 @@ class TrainWord2Vec:
     def prepare_corpus(self, corpus: List[str], win_size: int):
         self.bow = BagOfWords()
         self.bow.make_tokenized_matrix_english(corpus, lemmatize=True)
-        self.bow.make_bow()
+        self.bow.make_token_indices()
         self.bow.make_pairs_matrix(win_size=win_size, as_index=True)
         self.vocab_size = len(self.bow.token2idx)
         self.train_size = len(self.bow.pairs_flat)
 
     def prepare_corpus_from_tokenized_bow(self, bow: BagOfWords, win_size: int):
         self.bow = bow
-        self.bow.make_bow()
+        self.bow.make_token_indices()
         self.bow.make_pairs_matrix(win_size=win_size, as_index=True)
         self.vocab_size = len(self.bow.token2idx)
         self.train_size = len(self.bow.pairs_flat)
