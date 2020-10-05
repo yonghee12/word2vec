@@ -25,6 +25,7 @@ with open('data/naver_news.pickle', 'rb') as f:
 
 class BagOfWords:
     def __init__(self, list_of_texts=None):
+        self.check_dependencies()
         lemm = WordNetLemmatizer()
         self.lemmatizer = lemm.lemmatize
         self.kor_tokenizer = KoreanTokenizer('mecab')
@@ -66,6 +67,14 @@ class BagOfWords:
     def make_pairs_matrix(self, win_size, as_index=True):
         self.pairs_matrix = [self.get_window_pairs(sent, win_size, as_index) for sent in self.tokenized_matrix]
         self.pairs_flat = list(chain.from_iterable(self.pairs_matrix))
+
+    def check_dependencies(self):
+        try:
+            WordNetLemmatizer()
+        except LookupError as e:
+            import nltk
+            print(nltk.download('wordnet'))
+
 
 
 class TrainWord2Vec:

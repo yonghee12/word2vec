@@ -9,7 +9,7 @@ from nltk.stem import WordNetLemmatizer
 from torch.autograd import Variable
 
 from functions import *
-from packages.langframe.tokenizers import KoreanTokenizer
+# from packages.langframe.tokenizers import KoreanTokenizer
 
 eng_corpus = ['he is a king',
               'she is a queen',
@@ -18,17 +18,17 @@ eng_corpus = ['he is a king',
               'warsaw is poland capital',
               'berlin is germany capital',
               'paris is france capital']
-
-with open('data/naver_news.pickle', 'rb') as f:
-    kor_corpus = pickle.load(f)
-    f.close()
+#
+# with open('data/naver_news.pickle', 'rb') as f:
+#     kor_corpus = pickle.load(f)
+#     f.close()
 
 
 class BagOfWords:
     def __init__(self, list_of_texts=None):
         lemm = WordNetLemmatizer()
         self.lemmatizer = lemm.lemmatize
-        self.kor_tokenizer = KoreanTokenizer('mecab')
+        # self.kor_tokenizer = KoreanTokenizer('mecab')
 
         if list_of_texts:
             self.make_token_indices(list_of_texts)
